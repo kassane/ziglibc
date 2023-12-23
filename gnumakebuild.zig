@@ -83,25 +83,28 @@ pub fn addGnuMake(
     }
 
     exe.addIncludePath(.{ .path = b.pathJoin(&.{ repo_path, "src" }) });
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
-        "-std=c99",
-        "-DHAVE_CONFIG_H",
-        "-Wall",
-        "-Wextra",
-        "-Werror",
-        "-Wwrite-strings",
-        "-Wshadow",
-        "-Wdeclaration-after-statement",
-        "-Wbad-function-cast",
-        "-Wformat-security",
-        "-Wtype-limits",
-        "-Wunused-but-set-parameter",
-        "-Wpointer-arith",
-        "-Wignored-qualifiers",
-        // ignore unused parameter errors because the ATTRIBUTE define isn't working in makeint.h
-        "-Wno-unused-parameter",
-        "-Wno-dangling-else",
-        //"-Wlogical-op", "-Wformat-signedness", "-Wduplicated-cond",
+    exe.addCSourceFiles(.{
+        .files = files.toOwnedSlice() catch unreachable,
+        .flags = &.{
+            "-std=c99",
+            "-DHAVE_CONFIG_H",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Wwrite-strings",
+            "-Wshadow",
+            "-Wdeclaration-after-statement",
+            "-Wbad-function-cast",
+            "-Wformat-security",
+            "-Wtype-limits",
+            "-Wunused-but-set-parameter",
+            "-Wpointer-arith",
+            "-Wignored-qualifiers",
+            // ignore unused parameter errors because the ATTRIBUTE define isn't working in makeint.h
+            "-Wno-unused-parameter",
+            "-Wno-dangling-else",
+            //"-Wlogical-op", "-Wformat-signedness", "-Wduplicated-cond",
+        },
     });
 
     exe.addIncludePath(.{ .path = "inc/libc" });

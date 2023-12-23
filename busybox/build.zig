@@ -6,7 +6,7 @@ const BusyboxPrepStep = struct {
     builder: *std.build.Builder,
     repo_path: []const u8,
     pub fn create(b: *std.build.Builder, repo: *GitRepoStep) *BusyboxPrepStep {
-        var result = b.allocator.create(BusyboxPrepStep) catch unreachable;
+        const result = b.allocator.create(BusyboxPrepStep) catch unreachable;
         result.* = BusyboxPrepStep{
             .step = std.build.Step.init(.{
                 .id = .custom,
@@ -64,9 +64,9 @@ pub fn add(
     for (sources) |src| {
         files.append(b.pathJoin(&.{ repo_path, src })) catch unreachable;
     }
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c99",
-    });
+    } });
     exe.addIncludePath(.{ .path = b.pathJoin(&.{ repo_path, "include" }) });
 
     exe.addIncludePath(.{ .path = "inc/libc" });

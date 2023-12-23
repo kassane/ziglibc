@@ -41,9 +41,9 @@ pub fn addAwk(
         files.append(b.pathJoin(&.{ repo_path, "src", src })) catch unreachable;
     }
 
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c11",
-    });
+    } });
 
     exe.addIncludePath(.{ .path = "inc/libc" });
     exe.addIncludePath(.{ .path = "inc/posix" });

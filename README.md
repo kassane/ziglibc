@@ -22,7 +22,7 @@ zig cc \
     -lc
 ```
 
-Currently builds with zig version `0.11.0-dev.3886+0c1bfe271`.
+Currently builds with zig version `0.12.0-dev.1845+21ae64852`.
 
 # Thoughts
 

@@ -13,7 +13,7 @@ const NcursesPrepStep = struct {
     //curses_h: []const u8,
 
     pub fn create(b: *std.build.Builder, repo: *GitRepoStep) *NcursesPrepStep {
-        var result = b.allocator.create(NcursesPrepStep) catch unreachable;
+        const result = b.allocator.create(NcursesPrepStep) catch unreachable;
         result.* = NcursesPrepStep{
             .step = std.build.Step.init(.{
                 .id = .custom,
@@ -158,9 +158,9 @@ pub fn add(
     for ([_][]const u8{"lib_initscr.c"}) |src| {
         files.append(b.pathJoin(&.{ repo_path, "ncurses", "base", src })) catch unreachable;
     }
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c99",
-    });
+    } });
     exe.addIncludePath(.{ .path = b.pathJoin(&.{ repo_path, "include" }) });
     exe.addIncludePath(.{ .path = b.pathJoin(&.{ repo_path, "ncurses" }) });
 

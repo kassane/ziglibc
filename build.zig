@@ -199,7 +199,7 @@ fn installArtifact(b: *std.Build, artifact: anytype) *std.Build.Step.InstallArti
     return install;
 }
 
-fn addPosix(artifact: *std.build.LibExeObjStep, zig_posix: *std.build.LibExeObjStep) void {
+fn addPosix(artifact: *std.build.CompileStep, zig_posix: *std.build.CompileStep) void {
     artifact.linkLibrary(zig_posix);
     artifact.addIncludePath(.{ .path = "inc" ++ std.fs.path.sep_str ++ "posix" });
 }
@@ -209,16 +209,16 @@ fn addTest(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+) *std.build.CompileStep {
     const exe = b.addExecutable(.{
         .name = name,
         .root_source_file = .{ .path = "test" ++ std.fs.path.sep_str ++ name ++ ".c" },
         .target = target,
         .optimize = optimize,
     });
-    exe.addCSourceFiles(&.{"test" ++ std.fs.path.sep_str ++ "expect.c"}, &[_][]const u8{});
+    exe.addCSourceFiles(.{ .files = &.{"test" ++ std.fs.path.sep_str ++ "expect.c"}, .flags = &.{} });
     exe.addIncludePath(.{ .path = "inc" ++ std.fs.path.sep_str ++ "libc" });
     exe.addIncludePath(.{ .path = "inc" ++ std.fs.path.sep_str ++ "posix" });
     exe.linkLibrary(libc_only_std_static);
@@ -235,9 +235,9 @@ fn addLibcTest(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    libc_only_posix: *std.build.LibExeObjStep,
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    libc_only_posix: *std.build.CompileStep,
 ) void {
     const libc_test_repo = GitRepoStep.create(b, .{
         .url = "git://nsz.repo.hu:49100/repo/libc-test",
@@ -274,7 +274,7 @@ fn addLibcTest(
             .target = target,
             .optimize = optimize,
         });
-        exe.addCSourceFiles(common_src, &[_][]const u8{});
+        exe.addCSourceFiles(.{ .files = common_src, .flags = &.{} });
         exe.step.dependOn(&libc_test_repo.step);
         exe.addIncludePath(.{ .path = libc_inc_path });
         exe.addIncludePath(.{ .path = "inc" ++ std.fs.path.sep_str ++ "libc" });
@@ -295,9 +295,9 @@ fn addTinyRegexCTests(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    zig_posix: *std.build.LibExeObjStep,
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    zig_posix: *std.build.CompileStep,
 ) void {
     const repo = GitRepoStep.create(b, .{
         .url = "https://github.com/marler8997/tiny-regex-c",
@@ -325,9 +325,9 @@ fn addTinyRegexCTests(
             files.append(b.pathJoin(&.{ repo_path, src })) catch unreachable;
         }
 
-        exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+        exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
             "-std=c99",
-        });
+        } });
         exe.addIncludePath(.{ .path = repo_path });
 
         exe.addIncludePath(.{ .path = "inc/libc" });
@@ -352,10 +352,10 @@ fn addLua(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    libc_only_posix: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    libc_only_posix: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+) *std.build.CompileStep {
     const lua_repo = GitRepoStep.create(b, .{
         .url = "https://github.com/lua/lua",
         .sha = "5d708c3f9cae12820e415d4f89c9eacbe2ab964b",
@@ -386,11 +386,11 @@ fn addLua(
         files.append(b.pathJoin(&.{ lua_repo_path, obj ++ ".c" })) catch unreachable;
     }
 
-    lua_exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    lua_exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-nostdinc",
         "-nostdlib",
         "-std=c99",
-    });
+    } });
 
     lua_exe.addIncludePath(.{ .path = "inc" ++ std.fs.path.sep_str ++ "libc" });
     lua_exe.linkLibrary(libc_only_std_static);
@@ -421,10 +421,10 @@ fn addCmph(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    zig_posix: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    zig_posix: *std.build.CompileStep,
+) *std.build.CompileStep {
     const repo = GitRepoStep.create(b, .{
         //.url = "https://git.code.sf.net/p/cmph/git",
         .url = "https://github.com/bonitao/cmph",
@@ -458,9 +458,9 @@ fn addCmph(
         files.append(b.pathJoin(&.{ repo_path, "src", src })) catch unreachable;
     }
 
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c11",
-    });
+    } });
 
     exe.addIncludePath(.{ .path = "inc/libc" });
     exe.addIncludePath(.{ .path = "inc/posix" });
@@ -484,10 +484,10 @@ fn addYacc(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    zig_posix: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    zig_posix: *std.build.CompileStep,
+) *std.build.CompileStep {
     const repo = GitRepoStep.create(b, .{
         .url = "https://github.com/ibara/yacc",
         .sha = "1a4138ce2385ec676c6d374245fda5a9cd2fbee2",
@@ -534,9 +534,9 @@ fn addYacc(
         files.append(b.pathJoin(&.{ repo_path, src })) catch unreachable;
     }
 
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c90",
-    });
+    } });
 
     exe.addIncludePath(.{ .path = "inc/libc" });
     exe.addIncludePath(.{ .path = "inc/posix" });
@@ -559,11 +559,11 @@ fn addYabfc(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    zig_posix: *std.build.LibExeObjStep,
-    zig_gnu: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    zig_posix: *std.build.CompileStep,
+    zig_gnu: *std.build.CompileStep,
+) *std.build.CompileStep {
     const repo = GitRepoStep.create(b, .{
         .url = "https://github.com/julianneswinoga/yabfc",
         .sha = "a789be25a0918d330b7a4de12db0d33e0785f244",
@@ -586,9 +586,9 @@ fn addYabfc(
     for (sources) |src| {
         files.append(b.pathJoin(&.{ repo_path, src })) catch unreachable;
     }
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c99",
-    });
+    } });
 
     exe.addIncludePath(.{ .path = "inc/libc" });
     exe.addIncludePath(.{ .path = "inc/posix" });
@@ -614,11 +614,11 @@ fn addSecretGame(
     b: *std.build.Builder,
     target: anytype,
     optimize: anytype,
-    libc_only_std_static: *std.build.LibExeObjStep,
-    zig_start: *std.build.LibExeObjStep,
-    zig_posix: *std.build.LibExeObjStep,
-    zig_gnu: *std.build.LibExeObjStep,
-) *std.build.LibExeObjStep {
+    libc_only_std_static: *std.build.CompileStep,
+    zig_start: *std.build.CompileStep,
+    zig_posix: *std.build.CompileStep,
+    zig_gnu: *std.build.CompileStep,
+) *std.build.CompileStep {
     const repo = GitRepoStep.create(b, .{
         .url = "https://github.com/ethinethin/Secret",
         .sha = "8ec8442f84f8bed2cb3985455e7af4d1ce605401",
@@ -641,9 +641,9 @@ fn addSecretGame(
     for (sources) |src| {
         files.append(b.pathJoin(&.{ repo_path, src })) catch unreachable;
     }
-    exe.addCSourceFiles(files.toOwnedSlice() catch unreachable, &[_][]const u8{
+    exe.addCSourceFiles(.{ .files = files.toOwnedSlice() catch unreachable, .flags = &.{
         "-std=c90",
-    });
+    } });
 
     exe.addIncludePath(.{ .path = "inc/libc" });
     exe.addIncludePath(.{ .path = "inc/posix" });
